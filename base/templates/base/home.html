@@ -32,7 +32,7 @@
         <div>
             {% for room in rooms %}
                 <div>
-                    {% if request.user == room.host %} # roomni yaratgan adminidan boshqa laga bu sahifala korinmidi. Can only authon admin
+                    {% if request.user == room.host %} {#  roomni yaratgan adminidan boshqa laga bu sahifala korinmidi. Can only author admin#}
                     <a href="{% url 'update-room' room.id %}">Edit</a>
                     <a href="{% url 'delete-room' room.id %}">Delete</a>
                     {% endif %}

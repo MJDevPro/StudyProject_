@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
 from .models import Room, Topic
 from .forms import RoomForm
 
@@ -15,18 +16,14 @@ from .forms import RoomForm
 #
 # ]
 
-# def logoutUser(request):
-#     logout(request)
-#     return redirect('home')
-
 
 def loginPage(request):
-
+    page = 'login'
     if request.user.is_authenticated: #user login qibogan bosa posiskda /login/ dib yozsa login sahifasiga obormidi. Home da qoladi
         return redirect('home')
 
     if request.method == 'POST':
-        username = request.POST.get('username')#username & passwordni olib
+        username = request.POST.get('username').lower()#username & passwordni olib
         password = request.POST.get('password')
 
         try:                                    #mavjud & mavjudmasligini tekshir
@@ -37,16 +34,35 @@ def loginPage(request):
         user = authenticate(request, username=username, password=password)#mavjud bo'lsa o'tkaz
 
         if user is not None:
-            login(request, user)#create user
+            login(request, user)#created user
             return redirect('home')
         else:
             messages.error(request, 'Username or Password does not exist')
 
-    context = {}
+    context = {'page': page}
     return render(request, 'base/login_register.html', context)
 
 
+def logoutUser(request):
+    logout(request)
+    return redirect('home')
 
+
+def registerPage(request):
+    form = UserCreationForm()
+
+    if request.method == 'POST':#we pass user data
+        form = UserCreationForm(request.POST) # user creationformga uzatamiz
+        if form.is_valid(): #we check form is valid
+            user = form.save(commit=False) #agar o'sha bo'lsa
+            user.username = user.username.lower()# username kicik harfdaligini tekwiramiz
+            user.save() # userni saqlimiz
+            login(request, user) # userni login qilamiz
+            return redirect('home') #va home ga yuboramiz
+        else:
+            messages.error(request, 'An error occurred during registration')
+
+    return render(request, 'base/login_register.html', {'form': form})
 
 def home(request):
     q = request.GET.get('q') if request.GET.get('q') != None else ''
@@ -65,7 +81,8 @@ def home(request):
 
 def room(request, pk):
     room = Room.objects.get(id=pk)
-    context = {'room':room}
+    room_messages = room.message_set.all()
+    context = {'room':room, 'room_messages': room_messages}
     return render(request,'base/room.html', context)
 
 @login_required(login_url='login')#login in qimagan bosa room yaratomidi  #restricted pages == cheklangan sahifalar
